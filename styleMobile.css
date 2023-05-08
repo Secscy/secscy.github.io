@@ -1,0 +1,34 @@
+/* section #titleDois::before{
+    width: 170px;
+    height: 3px;
+    background: #111;
+    transform: translateX(-50%);
+}
+.contact #titleDois::after{
+    content: "conte comigo!";
+} */
+
+/* @media only screen and (max-width: 505px) {
+    section #titleDois::before{
+        width: 170px;
+        height: 3px;
+        background: #111;
+        transform: translateX(-50%);
+    }
+    .contact #titleDois::after{
+        content: "conte comigo!";
+    }
+}
+
+@media only screen and (max-width: 328px) {
+    section #titleDois::before{
+        width: 130px;
+        height: 3px;
+        background: #111;
+        transform: translateX(-50%);
+    }
+    .contact #titleDois::after{
+        content: "let's bora!";
+    }
+}
+ */
