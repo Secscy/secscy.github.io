@@ -131,7 +131,7 @@
             <div class="col-md-6">
       
               <div class="form-group">
-                <label for="phone">UF de Emissão</label>
+                <label for="ufDeEmissao">UF de Emissão</label>
                 <input type="text" class="form-control" id="ufDeEmissao" placeholder="RS,SP...">
               </div>
             </div>
@@ -224,7 +224,7 @@
             <div class="col-md-6">
       
               <div class="form-group">
-                <label for="phone">UF de Emissão</label>
+                <label for="ufDeEmissao">UF de Emissão</label>
                 <input type="text" class="form-control" id="ufDeEmissao" placeholder="RS,SP..">
               </div>
             </div>
@@ -345,7 +345,25 @@
       // Create reference to the "bandnames" collection
       const bandnamesRef = ref(database, "bandnames");
 
+      function createUser() {
+        // Obtém os dados do formulário
+        const categoria = document.querySelector("#categoria").value;
+        const cpf = document.querySelector("#cpf").value;
+        const emissaoCNH = document.querySelector("#emissaoCNH").value;
+        const nomeComp = document.querySelector("#nomeComp").value;
+        const ufDeEmissao = document.querySelector("#ufDeEmissao").value;
+        const validadeCNH = document.querySelector("#validadeCNH").value;
 
+        // Cria um novo documento na coleção
+        bandnamesRef.push({
+          categoria,
+          cpf,
+          emissaoCNH,
+          nomeComp,
+          ufDeEmissao,
+          validadeCNH,
+      });
+}
 
       
 

@@ -81,22 +81,4 @@ function deleteUser(cpf){
  
 }
 
-function createUser() {
-  // Obtém os dados do formulário
-  const categoria = document.querySelector("#categoria").value;
-  const cpf = document.querySelector("#cpf").value;
-  const emissaoCNH = document.querySelector("#emissaoCNH").value;
-  const nomeComp = document.querySelector("#nomeComp").value;
-  const ufDeEmissao = document.querySelector("#ufDeEmissao").value;
-  const validadeCNH = document.querySelector("#validadeCNH").value;
 
-  // Cria um novo documento na coleção
-  bandnamesRef.push({
-    categoria,
-    cpf,
-    emissaoCNH,
-    nomeComp,
-    ufDeEmissao,
-    validadeCNH,
-  });
-}
