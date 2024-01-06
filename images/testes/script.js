@@ -64,20 +64,3 @@ botaoShowImages.addEventListener("click", () => {
   oqDesejaFazer.style.display ="none";
   showImages.style.display ="block";
 });
-
-
-
-function viewUser(cpf){
-
-  //Essas funções estarão no script do firebase direto no html
-
-}
-
-function deleteUser(cpf){
- 
-  //Essas funções estarão no script do firebase direto no html
-  console.log(cpf);
- 
-}
-
-
