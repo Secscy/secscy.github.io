@@ -12,7 +12,7 @@ import { getDatabase, ref } from "https://www.gstatic.com/firebasejs/10.7.1/fire
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDrILJtw4J1jHIOal-TljOpUp4ka78kkPw",
+  apiKey: "AIzaSyCYliQfq0fOvgrXF29Zuicr8BiX2VLbIQE",
   authDomain: "cdtacesso.firebaseapp.com",
   projectId: "cdtacesso",
   storageBucket: "cdtacesso.appspot.com",
