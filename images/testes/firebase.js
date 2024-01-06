@@ -1,7 +1,11 @@
 
 // Import the functions you need from the SDKs you need
-import { initializeApp, getFirestore } from "firebase/app";
-import { collection, addDoc } from "firebase/firestore";
+
+// Required for side-effects
+
+import { initializeApp } from "firebase/app";
+import { collection, addDoc, getFirestore } from "firebase/firestore";
+
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -23,35 +27,49 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Access the firestore database instance
-const db = firebase.firestore();
+const db = getFirestore(app);
 
 // Create reference to the "bandnames" collection
 
 const bandnamesCollection = collection(db, "bandnames");
 
 
-function createUser() {
-    // Get data from the form (unchanged)
-    const categoria = document.querySelector("#categoria").value;
-    const cpf = document.querySelector("#cpf").value;
-    const emissaoCNH = document.querySelector("#emissaoCNH").value;
-    const nomeComp = document.querySelector("#nomeComp").value;
-    const ufDeEmissao = document.querySelector("#ufDeEmissao").value;
-    const validadeCNH = document.querySelector("#validadeCNH").value;
-  
-    // Add a new document to the collection
-    addDoc(bandnamesCollection, {
-      categoria,
-      cpf,
-      emissaoCNH,
-      nomeComp,
-      ufDeEmissao,
-      validadeCNH,
-    })
-    .then(() => {
-      console.log("Document added successfully!");
-    })
-    .catch((error) => {
-      console.error("Error adding document:", error);
+
+
+
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    function createUser() {
+        // Get data from the form (unchanged)
+        const categoria = document.querySelector("#categoria").value;
+        const cpf = document.querySelector("#cpf").value;
+        const emissaoCNH = document.querySelector("#emissaoCNH").value;
+        const nomeComp = document.querySelector("#nomeComp").value;
+        const ufDeEmissao = document.querySelector("#ufDeEmissao").value;
+        const validadeCNH = document.querySelector("#validadeCNH").value;
+      
+        // Add a new document to the collection
+        addDoc(bandnamesCollection, {
+          categoria,
+          cpf,
+          emissaoCNH,
+          nomeComp,
+          ufDeEmissao,
+          validadeCNH,
+        })
+        .then(() => {
+          console.log("Document added successfully!");
+        })
+        .catch((error) => {
+          console.error("Error adding document:", error);
+        });
+      }
+
+    const button = document.querySelector("#botaoAdicionarUsuario");
+    button.addEventListener("click", () => {
+        console.log("Cheguei aqui");
+        createUser();
+    
     });
-  }
+  });

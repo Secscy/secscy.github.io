@@ -12,6 +12,8 @@ const botaoAddUsers = document.querySelector(".botaoAddUsers");
 const oqDesejaFazer = document.querySelector(".oqDesejaFazer");
 const botaoDeleteUsers = document.querySelector(".botaoDeleteUsers");
 const deleteUsers = document.querySelector(".deleteUsers");
+const botaoAdicionarUsuario = document.querySelector(".botaoAdicionarUsuario");
+
 
 passwordTrigger.addEventListener("click", () => {
   const password = prompt("Insira a senha:");
