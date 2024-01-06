@@ -23,10 +23,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Access the firestore database instance
-const db = getFirestore(app);
+const db = firebase.firestore();
 
 // Create reference to the "bandnames" collection
+
 const bandnamesCollection = collection(db, "bandnames");
+
 
 function createUser() {
     // Get data from the form (unchanged)
