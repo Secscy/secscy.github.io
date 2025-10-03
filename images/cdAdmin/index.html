@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <link type="text/css" rel="stylesheet" id="dark-mode-custom-link">
+    <link type="text/css" rel="stylesheet" id="dark-mode-general-link">
+    <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Page not found</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <style type="text/css" media="screen">
+      body {
+        background-color: #f1f1f1;
+        margin: 0; 
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      .container { margin: 50px auto 40px auto; width: 600px; text-align: center; }
+
+      a { color: #4183c4; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      h1 { width: 800px; position:relative; left: -100px; letter-spacing: -1px; line-height: 60px; font-size: 60px; font-weight: 100; margin: 0px 0 50px 0; text-shadow: 0 1px 0 #fff; }
+      p { color: rgba(0, 0, 0, 0.5); margin: 20px 0; line-height: 1.6; }
+
+      ul { list-style: none; margin: 25px 0; padding: 0; }
+      li { display: table-cell; font-weight: bold; width: 1%; }
+
+
+      #suggestions {
+        margin-top: 35px;
+        color: #ccc;
+      }
+      #suggestions a {
+        color: #666666;
+        font-weight: 200;
+        font-size: 14px;
+        margin: 0 10px;
+      }
+
+    </style>
+  </head>
+
+
+  <body>
+
+    <div class="container" style="display: block;">
+      <h1>An error has occured<span id="password-trigger">.</span></h1>
+      <h2>Sorry! The page you are looking for can not be found. Perhaps the page you requested was moved or deleted. It is also possible that you made a small typo when entering the address. Go to the main page.</h2>
+      <h1> <span class="ascii">(╯°□°）╯</span></h1>
+      <a onclick="history.back()">Go back</a>
+    </div>
+    <div class="newContainer" style="display: none;">
+      
+      <div class="container oqDesejaFazerScreen">
+        <h1 class="display-4">O que você deseja fazer?</h1>
+      
+        <div class="row">
+          <div class="col-md-4">
+            <a href="#" class="btn btn-primary btn-block botaoAddUsers">
+              <h3>Adicionar</h3>
+            </a>
+          </div>
+          <div class="col-md-4">
+            <a href="#" class="btn btn-primary btn-block botaoViewUsers">
+              <h3>Visualizar</h3>
+            </a>
+          </div>
+          <div class="col-md-4">
+            <a href="#" class="btn btn-primary btn-block botaoDeleteUsers">
+              <h3>Deletar</h3>
+            </a>
+          </div>
+        </div>
+      
+        <div class="row">
+          <div class="col-md-6">
+            <a id="botaoMostrarUsuarios" style="color: white;" class="btn btn-primary btn-block botaoShowAllUsers">
+              <h3>Mostrar Usuários</h3>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+
+
+      <div class="container addUsersScreen" style="display: none;">
+        <h1 class="text-center mb-4" id="addUsersClass">Adicionar Usuário</h1>
+        <a style="color: white;" class="btn btn-primary mb-3" onclick="skipPass()">Página Inicial</a>
+      
+        <form>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="nomeComp">Nome Completo:</label>
+                <input type="text" class="form-control" placeholder="Nome Completo" id="nomeComp">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="cpf">CPF</label>
+                <input type="text" class="form-control" placeholder="123.456.789-10" id="cpf">
+              </div>
+            </div>
+          </div>
+      
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="categoria">Categoria</label>
+                <input type="text" class="form-control" id="categoria" placeholder="A, B, AB, C...">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="emissaoCNH">Emissão CNH</label>
+                <input type="text" class="form-control" placeholder="01/01/2001" id="emissaoCNH">
+              </div>
+            </div>
+          </div>
+      
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="ufDeEmissao">UF de Emissão</label>
+                <input type="text" class="form-control" id="ufDeEmissao" placeholder="RS,SP...">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="validadeCNH">Validade CNH</label>
+                <input type="text" class="form-control" id="validadeCNH" placeholder="01/01/2001">
+              </div>
+            </div>
+          </div>
+      
+          <a id="botaoAdicionarUsuario" style="color: white;" class="btn btn-primary btn-block">Adicionar Usuário</a>
+        </form>
+      
+        <br><br>
+      
+        <form class="imagesForm">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="cpfDaImagem">CPF</label>
+              <input type="text" class="form-control" placeholder="123.456.789-10" id="cpfDaImagem">
+            </div>
+          </div>
+      
+          <div class="form-group">
+            <label for="fotoUm">Foto 1:</label>
+            <input type="file" id="fotoUm" name="fotoUm" class="form-control-file">
+          </div>
+      
+          <div class="form-group">
+            <label for="fotoDois">Foto 2:</label>
+            <input type="file" id="fotoDois" name="fotoDois" class="form-control-file">
+          </div>
+      
+          <div class="form-group">
+            <label for="fotoTres">Foto 3:</label>
+            <input type="file" id="fotoTres" name="fotoTres" class="form-control-file">
+          </div>
+      
+          <div class="form-group">
+            <label for="fotoQuatro">Foto 4:</label>
+            <input type="file" id="fotoQuatro" name="fotoQuatro" class="form-control-file">
+          </div>
+
+          <br><br><br>
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <button id="botaoEnviarImagens" type="submit" class="btn btn-primary">Enviar Imagens</button>
+          </div>
+        </form>
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <div class="boxes" id="boxesAddImages" style="display: none;">
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="viewUsersScreen" style="display: none; padding-left: 20%; padding-right: 20%; padding-top: 5%;">
+        <h1 class="text-center mb-4" style="padding-left: 30%;">Visualizar Usuários</h1>
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <a style="color: white;" class="btn btn-primary mt-4" onclick="skipPass()">Página Inicial</a>
+        </div>
+        
+      
+        <form id="user-form">
+          <label for="cpfView">Informe o CPF que deseja visualizar:</label>
+          <input type="text" id="cpfView" name="cpfView" class="form-control"><br><br>
+        </form>
+        <a id="botaoVisualizarUsuario" style="color: white;" class="btn btn-primary btn-block mt-4">Visualizar</a>
+      
+        <div class="container">
+          <div id="user-data" class="card mt-4 shadow-sm" style="display: none;">
+            <div class="card-header bg-primary text-white">
+              <h4 class="mb-0">Dados do Usuário</h4>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p class="card-text font-weight-bold">Nome Completo:</p>
+                  <p class="card-text" id="nomeCompView"></p>
+                  <p class="card-text font-weight-bold">CPF:</p>
+                  <p class="card-text" id="cpfViewDois"></p>
+                  <p class="card-text font-weight-bold">Categoria:</p>
+                  <p class="card-text" id="categoriaView"></p>
+                </div>
+                <div class="col-md-6">
+                  <p class="card-text font-weight-bold">Emissão CNH:</p>
+                  <p class="card-text" id="emissaoCNHView"></p>                   
+                  <p class="card-text font-weight-bold">UF de Emissão:</p>
+                  <p class="card-text" id="ufDeEmissaoView"></p>
+                  <p class="card-text font-weight-bold">Validade CNH:</p>
+                  <p class="card-text" id="validadeCNHView"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        
+      
+        <a style="color: white;" class="btn btn-primary mt-4 botaoShowImages" id="botaoShowUserImages">Mostrar Imagens</a>
+        
+        <div class="showImages" style="display: none;">
+        
+          <form class="imagesForm">
+            <div class="container mt-4">
+              <div class="row showImages">
+                <div class="col-md-3">
+                  <img id="image1" class="img-fluid rounded" src="#" alt="Foto 1">
+                </div>
+                <div class="col-md-3">
+                  <img id="image2" class="img-fluid rounded" src="#" alt="Foto 2">
+                </div>
+                <div class="col-md-3">
+                  <img id="image3" class="img-fluid rounded" src="#" alt="Foto 3">
+                </div>
+                <div class="col-md-3">
+                  <img id="image4" class="img-fluid rounded" src="#" alt="Foto 4">
+                </div>
+              </div>
+            </div>            
+          </div>
+
+        </div>
+
+
+
+      <div class="container deleteUsersScreen" style="display: none;">
+        <h1 class="text-center mb-4">Deletar Usuário</h1>
+        <a style="color: white;" class="btn btn-primary mb-3" onclick="skipPass()">Página Inicial</a>
+      
+        <form id="user-form" class="mt-4">
+          <div class="form-group">
+            <label for="cpfDelete">Informe o CPF que deseja deletar:</label>
+            <input type="text" class="form-control" id="cpfDelete" name="cpfDelete">
+          </div>
+        </form>
+      
+        <a id="botaoDeletarUsuario" style="color: white;" class="btn btn-primary btn-block mt-4">Deletar Usuário</a>
+        <a id="botaoDeletarImagensUsuario" style="color: white; background-color: rgb(105, 21, 201);" class="btn btn-primary btn-block mt-4">Deletar Imagens do Usuário</a>
+
+
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <div class="boxes" id="boxesDeleteImages" style="display: none;">
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="box">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+
+
+      <div class="container showAllUsers" style="display: none;">
+        <div class="row">
+          <div class="col-md-12 mb-4">
+            <h1 class="text-center">Mostrar Usuários</h1>
+            <a style="color: white;" class="btn btn-primary float-end" onclick="skipPass()">Página Inicial</a>
+          </div>
+        </div>
+    
+
+        <div class="row">
+          <div class="col-md-12">
+            <h4>Nomes & CPFs</h4>
+            <div class="list-group users-list">
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+
+
+      <ul id="user-list"></ul>
+      
+    </div>
+
+    
+
+  
+    <script src="script.js"></script>
+    <script src="dist/bundle.js"></script>
+
+</body></html>

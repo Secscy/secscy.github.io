@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH Bomb: Run! (JS)</title>
+    <!-- Configuração do Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Consolas', 'Monaco', 'monospace'],
+                    },
+                    colors: {
+                        // Cor Verde Neon, remetendo a terminais antigos
+                        'terminal-green': '#00FF00',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Estilos específicos para o display do jogo (Terminal-like) -->
+    <style>
+        /* Preserva os espaços e quebras de linha para o desenho do jogo ASCII */
+        #game-display {
+            white-space: pre; 
+            overflow: hidden; /* Garante que não haverá barra de rolagem horizontal */
+        }
+        /* Efeito de sobreposição do Game Over */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Removidas as propriedades display, align-items, e justify-content para que a classe 'hidden' do Tailwind funcione */
+        }
+        .container-relative {
+            position: relative;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 flex items-center justify-center font-sans">
+
+    <!-- Container Principal do Jogo -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-xl mx-auto border border-terminal-green/50 container-relative">
+        <h1 class="text-3xl font-bold text-center mb-4 text-terminal-green">
+            C Hydrogen Bombs, Run! 💣
+        </h1>
+        <p class="text-center text-gray-400 mb-6">
+            Desvie das Bombas (&amp;)! Dificuldade aumenta com a pontuação.
+        </p>
+
+        <!-- Área de Exibição do Jogo (Simula o Terminal) -->
+        <div class="bg-black border-2 border-terminal-green p-3 rounded-lg shadow-inner mb-4">
+            <pre id="game-display" class="font-mono text-sm text-terminal-green leading-tight"></pre>
+        </div>
+
+        <!-- Estatísticas e Controles -->
+        <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 text-gray-300">
+            <div id="stats-area" class="text-lg font-semibold text-terminal-green">
+                Score: 0 | Wave: 1
+            </div>
+            
+            <div id="controls-area" class="flex space-x-2">
+                <!-- Botão Esquerda -->
+                <button id="move-left" class="bg-terminal-green/20 hover:bg-terminal-green/40 text-terminal-green font-bold py-2 px-4 rounded-full transition duration-150 shadow-md shadow-terminal-green/30">
+                    ← A
+                </button>
+                <!-- Botão Direita -->
+                <button id="move-right" class="bg-terminal-green/20 hover:bg-terminal-green/40 text-terminal-green font-bold py-2 px-4 rounded-full transition duration-150 shadow-md shadow-terminal-green/30">
+                    D →
+                </button>
+            </div>
+        </div>
+
+        <!-- Tela de Game Over (Inicialmente Oculta) -->
+        <div id="game-over-screen" class="hidden absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center rounded-xl z-10">
+            <div class="text-center p-8 bg-gray-700 rounded-lg shadow-2xl border-4 border-red-500">
+                <h2 class="text-4xl font-extrabold text-red-500 mb-4 animate-pulse">GAME OVER! 💥</h2>
+                <p id="final-score" class="text-2xl text-white mb-6">Sua Pontuação: 0</p>
+                <button id="restart-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200">
+                    Jogar Novamente
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script JavaScript para a Lógica do Jogo -->
+    <script>
+        // === CONFIGURAÇÕES DO JOGO ===
+        const GAME_WIDTH = 40;
+        const GAME_HEIGHT = 20;
+        const MAX_BOMBS = 50;
+        const TICK_RATE = 50; // 50ms = 20 FPS (equivalente a 0.05s)
+        const BOMB_SPAWN_INTERVAL = 20; // 20 ticks entre cada onda de bombas
+        const EXPLOSION_FRAMES = 5; // Quadros para a animação de explosão
+
+        // === ESTADO DO JOGO ===
+        let planeX, planeY;
+        let score = 0;
+        let isRunning = false;
+        let gameInterval = null;
+        let tickCount = 0;
+        let bombs = [];
+        let explosionActive = false;
+        let explosionFrame = 0;
+
+        // === REFERÊNCIAS DOM ===
+        const gameDisplay = document.getElementById('game-display');
+        const statsArea = document.getElementById('stats-area');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScore = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+        const moveLeftButton = document.getElementById('move-left');
+        const moveRightButton = document.getElementById('move-right');
+
+        // === LÓGICA DO JOGO ===
+
+        /**
+         * Calcula o número de bombas a serem geradas com base na pontuação.
+         * Aumenta em 1 a cada 10 pontos.
+         */
+        function getBombsPerWave() {
+            const waves = Math.floor(score / 10);
+            let bombCount = 1 + waves;
+            const maxBombs = GAME_WIDTH - 2;
+            return Math.min(bombCount, maxBombs);
+        }
+        
+        /**
+         * Inicializa o array de bombas.
+         */
+        function initBombs() {
+            bombs = [];
+        }
+
+        /**
+         * Gera uma nova onda de bombas, tentando garantir que pelo menos um caminho seguro exista.
+         * (Lógica adaptada do C para JS)
+         */
+        function spawnBombWave() {
+            const bombsToSpawn = getBombsPerWave();
+            let availablePositions = [];
+            
+            // Encontra posições vazias na linha superior (y=0)
+            for (let x = 0; x < GAME_WIDTH; x++) {
+                let occupied = bombs.some(b => b.active && b.y === 0 && b.x === x);
+                if (!occupied) {
+                    availablePositions.push(x);
+                }
+            }
+
+            if (availablePositions.length === 0 || bombsToSpawn === 0) return;
+
+            let successfulSpawn = false;
+            
+            // Tentativa de gerar bombas com caminho seguro
+            for (let attempt = 0; attempt < 100; attempt++) {
+                const currentWave = [];
+                let tempPositions = [...availablePositions];
+                
+                // Escolhe posições aleatórias
+                for (let b = 0; b < bombsToSpawn && tempPositions.length > 0; b++) {
+                    const idx = Math.floor(Math.random() * tempPositions.length);
+                    const chosenX = tempPositions[idx];
+                    
+                    tempPositions.splice(idx, 1);
+                    currentWave.push({ x: chosenX, y: 0, active: true });
+                }
+                
+                const allBombsForCheck = [...bombs.filter(b => b.active), ...currentWave];
+
+                // Verifica se existe um caminho seguro (uma coluna de 2 espaços desimpedida na linha de pouso)
+                let safePathExists = false;
+                
+                for (let x = 0; x <= GAME_WIDTH - 2; x++) { // Posições iniciais do avião (largura 2)
+                    let pathIsSafe = true;
+                    
+                    for (const bomb of allBombsForCheck) {
+                        // Verifica se a bomba atingirá o avião na linha de pouso
+                        if (bomb.y < planeY && (bomb.x === x || bomb.x === x + 1)) {
+                             // Se a bomba já estiver no caminho, assume que ela descerá
+                             pathIsSafe = false;
+                             break;
+                        }
+                    }
+                    
+                    if (pathIsSafe) {
+                        safePathExists = true;
+                        break;
+                    }
+                }
+                
+                if (safePathExists) {
+                    // Confirma as novas bombas
+                    bombs.push(...currentWave);
+                    successfulSpawn = true;
+                    break;
+                }
+                // Se falhar, tenta outra combinação
+            }
+
+            // Fallback (garante que algo é gerado, mesmo que arriscado)
+            if (!successfulSpawn && bombsToSpawn > 0) {
+                 for (let i = 0; i < Math.min(2, bombsToSpawn); i++) {
+                     const idx = Math.floor(Math.random() * availablePositions.length);
+                     const chosenX = availablePositions[idx];
+                     availablePositions.splice(idx, 1);
+                     bombs.push({ x: chosenX, y: 0, active: true });
+                }
+            }
+        }
+
+        /**
+         * Move as bombas para baixo e atualiza a pontuação.
+         */
+        function updateBombs() {
+            for (let i = bombs.length - 1; i >= 0; i--) {
+                const bomb = bombs[i];
+                if (bomb.active) {
+                    bomb.y++;
+                    
+                    if (bomb.y >= GAME_HEIGHT) {
+                        // Bombas que saem da tela
+                        bomb.active = false; 
+                        score++;
+                    }
+                }
+            }
+            // Remove bombas inativas
+            bombs = bombs.filter(b => b.active);
+        }
+
+        /**
+         * Verifica se o avião colidiu com alguma bomba.
+         */
+        function checkCollision() {
+            // O avião ocupa planeX e planeX + 1 na linha planeY
+            return bombs.some(bomb => 
+                bomb.active && 
+                bomb.y === planeY && 
+                (bomb.x === planeX || bomb.x === planeX + 1)
+            );
+        }
+
+        /**
+         * Desenha o estado atual do jogo no display.
+         */
+        function drawGame() {
+            let output = "";
+            
+            // Borda Superior
+            output += "#".repeat(GAME_WIDTH + 2) + "\n";
+            
+            for(let i = 0; i < GAME_HEIGHT; i++) {
+                output += "#"; // Borda Esquerda
+                let rowContent = new Array(GAME_WIDTH).fill(" ");
+                
+                // Desenha Bombas (&)
+                for (const bomb of bombs) {
+                    if (bomb.active && bomb.y === i && bomb.x >= 0 && bomb.x < GAME_WIDTH) {
+                        rowContent[bomb.x] = "&";
+                    }
+                }
+                
+                // Desenha Avião (/\)
+                if (i === planeY) {
+                    if (planeX >= 0 && planeX < GAME_WIDTH - 1) {
+                        rowContent[planeX] = "/";
+                        rowContent[planeX + 1] = "\\";
+                    }
+                }
+                
+                output += rowContent.join("");
+                output += "#\n"; // Borda Direita
+            }
+            
+            // Borda Inferior
+            output += "#".repeat(GAME_WIDTH + 2) + "\n";
+            
+            gameDisplay.textContent = output;
+            statsArea.textContent = `Score: ${score} | Wave: ${Math.floor(score / 10) + 1} | Bombs/Wave: ${getBombsPerWave()}`;
+        }
+
+        /**
+         * Lógica do Jogo (um "tick")
+         */
+        function gameLoop() {
+            if (!isRunning) return;
+
+            tickCount++;
+            
+            // 1. Gerar Nova Onda de Bombas
+            if (tickCount % BOMB_SPAWN_INTERVAL === 0) {
+                spawnBombWave();
+            }
+            
+            // 2. Atualizar Posições
+            updateBombs();
+            
+            // 3. Verificar Colisão
+            if (checkCollision()) {
+                showExplosionAnimation();
+                return;
+            }
+            
+            // 4. Desenhar
+            drawGame();
+        }
+
+        /**
+         * Desenha a animação de explosão simplificada.
+         */
+        function drawExplosion(px, py, frame) {
+            let output = "";
+            // Caracteres da explosão: * -> X -> # -> .
+            const char = (frame === 0) ? "*" : (frame === 1) ? "X" : (frame === 2) ? "#" : (frame === 3) ? "." : " ";
+            const radius = Math.floor(frame / 2) + 1;
+
+            // Borda Superior
+            output += "#".repeat(GAME_WIDTH + 2) + "\n";
+            
+            for(let i = 0; i < GAME_HEIGHT; i++) {
+                output += "#"; 
+                let rowContent = new Array(GAME_WIDTH).fill(" ");
+                
+                for (let j = 0; j < GAME_WIDTH; j++) {
+                    // Distância de Manhattan (similar ao C original)
+                    const dist = Math.abs(i - py) + Math.abs(j - px); 
+                    if (dist <= radius) {
+                        rowContent[j] = char;
+                    }
+                }
+                
+                output += rowContent.join("");
+                output += "#\n"; 
+            }
+            
+            // Borda Inferior
+            output += "#".repeat(GAME_WIDTH + 2) + "\n";
+            output += `💥 BOOM! 💥\n`;
+            
+            gameDisplay.textContent = output;
+        }
+
+        /**
+         * Exibe a animação de explosão e chama a tela de Game Over.
+         */
+        function showExplosionAnimation() {
+            clearInterval(gameInterval);
+            isRunning = false;
+            
+            // Inicia o loop de animação de explosão
+            let currentExplosionFrame = 0;
+            const explosionInterval = setInterval(() => {
+                if (currentExplosionFrame >= EXPLOSION_FRAMES) {
+                    clearInterval(explosionInterval);
+                    endGame();
+                    return;
+                }
+                
+                drawExplosion(planeX, planeY, currentExplosionFrame);
+                currentExplosionFrame++;
+            }, 100); // 100ms por frame para a explosão
+        }
+
+        /**
+         * Exibe a tela de Game Over.
+         */
+        function endGame() {
+            isRunning = false;
+            finalScore.textContent = `Sua Pontuação: ${score}`;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        /**
+         * Inicia ou Reinicia o Jogo.
+         */
+        function startGame() {
+            if (isRunning) return;
+            
+            planeX = Math.floor(GAME_WIDTH / 2);
+            planeY = GAME_HEIGHT - 2;
+            score = 0;
+            tickCount = 0;
+            initBombs();
+
+            isRunning = true;
+            gameOverScreen.classList.add('hidden');
+
+            // Limpa o intervalo anterior e inicia o loop principal do jogo
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, TICK_RATE);
+            
+            // Desenho inicial
+            drawGame();
+        }
+
+        // === CONTROLES E EVENTOS ===
+
+        /**
+         * Lógica de manipulação de movimento.
+         */
+        function updateMovement(direction) {
+            if (!isRunning) return;
+            if (direction === 'left' && planeX > 0) {
+                planeX--;
+            } else if (direction === 'right' && planeX < GAME_WIDTH - 2) {
+                planeX++;
+            }
+            // Desenha imediatamente após o movimento para feedback instantâneo
+            drawGame();
+        }
+        
+        // Event listeners para os botões (Telas sensíveis ao toque)
+        moveLeftButton.addEventListener('click', () => updateMovement('left'));
+        moveRightButton.addEventListener('click', () => updateMovement('right'));
+
+        // Event listener para teclas
+        document.addEventListener('keydown', (e) => {
+            if (isRunning) {
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+                    updateMovement('left');
+                } else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+                    updateMovement('right');
+                }
+            } else if (e.key === 'Enter') {
+                startGame(); 
+            }
+        });
+        
+        // Event listener para o botão de Reiniciar
+        restartButton.addEventListener('click', startGame);
+
+        // Inicializa a tela de boas-vindas
+        function drawInitialScreen() {
+            let initialText = "";
+            
+            // Gera um frame estático de bordas
+            initialText += "#".repeat(GAME_WIDTH + 2) + "\n";
+            for(let i = 0; i < GAME_HEIGHT; i++) {
+                initialText += "#" + " ".repeat(GAME_WIDTH) + "#\n";
+            }
+            initialText += "#".repeat(GAME_WIDTH + 2) + "\n";
+
+            gameDisplay.textContent = 
+`=== C HYDROGEN BOMBS, RUN! ===
+
+Pressione 'A' ou '←' para Esquerda, 'D' ou '→' para Direita.
+Objetivo: Desviar das bombas (&)!
+Dificuldade: Aumenta a cada 10 pontos.
+
+Pressione ENTER ou o botão para Começar...
+
+${initialText}`;
+        }
+        
+        drawInitialScreen();
+        
+    </script>
+</body>
+</html>
