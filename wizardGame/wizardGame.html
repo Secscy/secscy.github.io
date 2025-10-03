@@ -7,7 +7,7 @@
     <!-- Carregando Tailwind CSS para estilos base e responsividade -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* * ESTILOS CSS - Conteúdo do seu wizardGameStyle.css
+        /* * ESTILOS CSS
          * Incluído aqui para conformidade com a regra de arquivo único.
          */
         
@@ -43,15 +43,28 @@
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
         }
 
+        /* --- Flash Overlay --- */
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 500; 
+            pointer-events: none; 
+            opacity: 0;
+            transition: opacity 0.1s ease-out; 
+        }
+
         /* --- Elemento do Mago (Wizard) --- */
         #wizard {
             position: absolute;
             left: 50px; /* Posição inicial */
             top: 50%;
-            transform: translate(-50%, -50%); /* Centraliza o Mago pelo centro */
+            transform: translate(-50%, -50%); 
             width: 80px;
             height: 80px;
-            background-color: #3b82f6; /* Cor base do Mago */
+            background-color: #3b82f6; 
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -59,7 +72,6 @@
             font-weight: bold;
             color: white;
             z-index: 10;
-            transition: all 0.05s linear; /* Transição suave para o movimento (tick) */
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
             cursor: move;
         }
@@ -97,7 +109,8 @@
             display: flex;
             flex-direction: column;
             gap: 40px;
-            align-items: flex-end;
+            align-items: center; /* Centraliza o conteúdo (símbolo + número) */
+            justify-content: center;
         }
 
         .dummy {
@@ -105,21 +118,29 @@
             height: 100px;
             border-radius: 12px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row; /* Para colocar símbolo e número lado a lado */
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
+            cursor: default; 
             transition: all 0.3s ease-in-out;
             border: 3px solid transparent;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
+        /* Ajuste do tamanho e espaçamento dos elementos internos do dummy */
+        .dummy .symbol {
+            font-size: 30px; /* Símbolo do feitiço */
+            margin-right: 8px;
+        }
+        .dummy .number {
+            font-size: 40px; /* Tecla de Lançamento */
+            font-weight: 900;
+        }
+
         /* Classes de fraqueza (aplicadas via JS) */
-        /* Nota: Utilizamos variáveis CSS personalizadas aqui, pois elas são acessíveis
-           diretamente no bloco de estilo. */
         .weakness-FIRE { background-color: var(--fire-orange); border-color: #FFD700; }
         .weakness-ICE { background-color: var(--ice-blue); border-color: #A9E7F9; }
         .weakness-LIGHTNING { background-color: var(--lightning-purple); border-color: #FFFF00; }
@@ -157,26 +178,66 @@
             height: 15px;
             border-radius: 50%;
             z-index: 100;
-            /* Propriedades definidas dinamicamente pelo JS */
             animation: cast-animation 0.5s forwards cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        /* --- Estilos de Componentes de Jogo --- */
+        .heart {
+            color: #ef4444; 
+            font-size: 24px;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+            transition: transform 0.2s ease-out;
+        }
+        .projectile {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #3f3f46; 
+            color: #fbbf24; 
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px #fbbf24;
+            z-index: 50;
         }
 
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- Score and Instructions HUD -->
+        <!-- Overlay para o efeito de piscar (flash) -->
+        <div id="flash-overlay"></div>
+
+        <!-- Score, Health, and Instructions HUD -->
         <div class="absolute top-4 left-4 p-4 bg-gray-700/50 rounded-xl shadow-lg text-white z-50">
-            <h1 class="text-2xl font-bold mb-2">Sequência Elemental</h1>
-            <p id="score-display" class="text-xl mb-4">Pontuação: 0</p>
+            <!-- Health Bar -->
+            <div class="mb-3">
+                <h2 class="text-lg font-semibold mb-1">Saúde</h2>
+                <div id="health-bar" class="flex space-x-1">
+                    <!-- Hearts will be dynamically inserted here -->
+                </div>
+            </div>
+            
+            <p id="score-display" class="text-xl font-bold mb-4">Pontuação: 0</p>
             <div class="text-sm space-y-1">
                 <p><strong class="text-yellow-400">Controles:</strong></p>
-                <!-- INSTRUÇÃO DE MOVIMENTO ATUALIZADA -->
-                <p>Mover: <kbd>F</kbd> + MOUSE (Teleporte até 200px)</p>
-                <p>Gelo: <kbd>Q</kbd> | Fogo: <kbd>W</kbd> | Raio: <kbd>E</kbd></p>
+                <!-- CONTROLES ATUALIZADOS -->
+                <p>Movimento: <kbd>U/H/J/K</kbd> (Cima/Esquerda/Baixo/Direita)</p>
+                <p>Pânico/Teleporte: <kbd>F</kbd> (Joga para esquerda)</p>
+                <p id="teleport-cooldown" class="text-sm text-yellow-300">Cooldown: Pronto</p>
+                <p>Gelo: <kbd>Q</kbd> | Fogo: <kbd>W</kbd> | Raio: <kbd>E</kbd> (Seleção de feitiços)</p>
+                <p>Lançar/Alvo: <kbd>O / P / L</kbd> (Ordem correta)</p>
                 <p>Remover último: <kbd>R</kbd></p>
             </div>
             <p id="casting-status" class="mt-2 font-semibold text-lg text-red-400">SELECIONE 3 FEITIÇOS!</p>
+        </div>
+        
+        <!-- Timer Display -->
+        <div class="absolute top-4 right-4 p-3 bg-red-600/70 rounded-xl shadow-lg text-white z-50">
+            <p id="timer-display" class="text-2xl font-extrabold">10.0s</p>
         </div>
 
         <!-- O Mago (Wizard) -->
@@ -192,16 +253,17 @@
 
         <!-- Área dos Dummies (Alvos) -->
         <div id="dummies-area">
-            <div id="dummy-1" class="dummy">DUMMY 1<br>🔥 FOGO</div>
-            <div id="dummy-2" class="dummy">DUMMY 2<br>❄️ GELO</div>
-            <div id="dummy-3" class="dummy">DUMMY 3<br>⚡ RAIO</div>
+            <!-- Dummies serão criados e populados via JS -->
         </div>
         
-        <!-- Contêiner para mensagens de notificação (substitui o alert()) -->
-        <div id="message-box" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1000]">
-            <div class="bg-white p-6 rounded-xl shadow-2xl text-center">
-                <p id="message-text" class="text-lg font-semibold mb-4"></p>
-                <button onclick="document.getElementById('message-box').classList.add('hidden')" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">OK</button>
+        <!-- Game Over Modal -->
+        <div id="game-over-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[1000]">
+            <div class="bg-gray-800 p-8 rounded-xl shadow-2xl text-white text-center">
+                <h2 class="text-4xl font-bold text-red-400 mb-4">GAME OVER</h2>
+                <p id="final-score" class="text-2xl mb-6">Pontuação Final: 0</p>
+                <button id="restart-button" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xl font-bold transition duration-200 shadow-md">
+                    Reiniciar Jogo
+                </button>
             </div>
         </div>
         
@@ -209,90 +271,135 @@
 
     <!-- Script principal do jogo (JavaScript) -->
     <script>
-        // Use a function instead of alert/confirm
-        function showMessage(text) {
-            const messageBox = document.getElementById('message-box');
-            document.getElementById('message-text').textContent = text;
-            messageBox.classList.remove('hidden');
-            messageBox.classList.add('flex');
-        }
-
-        // --- CONSTANTS AND CONFIGURATION ---
-        // Corrigido: As cores agora usam valores hexadecimais diretos para evitar a leitura de 'tailwind.config'
+        // --- CONSTANTES E CONFIGURAÇÃO ---
         const SPELLS = {
-            'Q': { type: 'ICE', color: '#4ECDC4', display: '❄️' }, // Azul Gelo
-            'W': { type: 'FIRE', color: '#FF8C00', display: '🔥' }, // Laranja Fogo
-            'E': { type: 'LIGHTNING', color: '#8A2BE2', display: '⚡' } // Roxo Relâmpago
+            'Q': { type: 'ICE', color: '#4ECDC4', display: '❄️' }, 
+            'W': { type: 'FIRE', color: '#FF8C00', display: '🔥' }, 
+            'E': { type: 'LIGHTNING', color: '#8A2BE2', display: '⚡' } 
+        };
+        const SPELL_SYMBOLS = {
+            'ICE': '❄️',
+            'FIRE': '🔥',
+            'LIGHTNING': '⚡'
         };
 
+        const ERROR_COLOR = '#FF0000'; 
         const DUMMY_WEAKNESSES = ['FIRE', 'ICE', 'LIGHTNING'];
-        const TELEPORT_DISTANCE = 200; // Pixels
-        const TICK_RATE = 1000 / 60; // Target 60 FPS update
+        const PROJECTILE_SPEED = 200; // Pixels per second
+        const TURN_TIME_LIMIT = 10.0; // Seconds (Aumentado para 10s)
+        const INITIAL_HEALTH = 5;
+        
+        // NOVAS CONSTANTES DE MOVIMENTO E HABILIDADE
+        const WIZARD_MOVE_SPEED = 500; // Pixels por segundo para movimento com U/H/J/K
+        const PANIC_TELEPORT_DISTANCE = 300; // Pixels que o teleporte move para a esquerda
+        const TELEPORT_COOLDOWN = 10; // Segundos de cooldown
 
         // --- GAME STATE ---
         const gameState = {
             score: 0,
+            health: INITIAL_HEALTH,
+            isGameOver: false,
             wizard: {
                 x: 50,
                 y: window.innerHeight / 2,
-                vx: 0, 
-                vy: 0, 
+                vx: 0, // Velocity X
+                vy: 0, // Velocity Y
                 selectedSpells: [], // Max 3 spells
             },
             dummies: [],
-            isCasting: false, // True when 3 spells are selected
-            clickSequence: [], // Stores dummy IDs in click order
+            projectiles: [], 
+            isCasting: false, 
+            clickSequence: [], // Sequência de Dummies clicada
             highlightedDummyId: null,
-            keysPressed: {},
+            keysPressed: {}, // Usa chaves internas (ARROW keys) para manter o gameLoop simples
             lastTime: 0,
             turn: 0,
+            teleportCooldown: 0, 
+            // Timer state for casting
+            turnTimer: TURN_TIME_LIMIT,
+            isCountingDown: false,
+            lastProjectileTime: 0,
+            projectileSpawnInterval: 600, // Spawn hostil a cada 0.6s (Dobro da frequência)
         };
 
         // --- DOM Elements ---
         const wizardEl = document.getElementById('wizard');
-        const spellSelectionEl = document.getElementById('spell-selection');
         const scoreDisplayEl = document.getElementById('score-display');
         const castingStatusEl = document.getElementById('casting-status');
-        const dummyElements = [
-            document.getElementById('dummy-1'),
-            document.getElementById('dummy-2'),
-            document.getElementById('dummy-3')
-        ];
+        const flashOverlayEl = document.getElementById('flash-overlay');
+        const healthBarEl = document.getElementById('health-bar');
+        const timerDisplayEl = document.getElementById('timer-display');
+        const gameOverModalEl = document.getElementById('game-over-modal');
+        const finalScoreEl = document.getElementById('final-score');
+        const restartButtonEl = document.getElementById('restart-button');
+        const teleportCooldownEl = document.getElementById('teleport-cooldown'); 
 
-        // --- GAME LOGIC FUNCTIONS ---
+        // --- FUNÇÕES DE LÓGICA DO JOGO ---
 
         /**
-         * Inicializa o estado do jogo e as posições iniciais.
+         * Gera um efeito de piscar na tela com uma cor específica.
          */
-        function initializeGame() {
-            // Setup initial dummy positions and weaknesses
-            for (let i = 0; i < 3; i++) {
-                gameState.dummies.push(createDummy(i + 1));
-            }
+        function flashScreen(color, duration = 150) {
+            flashOverlayEl.style.backgroundColor = color;
+            flashOverlayEl.style.opacity = '0.5'; 
 
-            // Set initial wizard position in DOM
-            wizardEl.style.left = `${gameState.wizard.x}px`;
-            wizardEl.style.top = `${gameState.wizard.y}px`;
-
-            startNewTurn();
+            setTimeout(() => {
+                flashOverlayEl.style.opacity = '0';
+            }, duration);
         }
+        
+        /**
+         * Desenha a barra de vida (corações) no HUD.
+         */
+        function drawHealthBar() {
+            healthBarEl.innerHTML = '';
+            const maxHealth = INITIAL_HEALTH;
+            const currentHealth = gameState.health;
+            
+            for (let i = 0; i < maxHealth; i++) {
+                const heartEl = document.createElement('span');
+                heartEl.classList.add('heart');
+                if (i < currentHealth) {
+                    heartEl.innerHTML = '♥'; // Coração cheio
+                } else {
+                    heartEl.innerHTML = '♡'; // Coração vazio
+                    heartEl.style.color = '#444';
+                    heartEl.style.textShadow = 'none';
+                }
+                healthBarEl.appendChild(heartEl);
+            }
+        }
+
 
         /**
          * Cria um novo dummy com fraqueza e ID aleatórios.
          */
         function createDummy(id) {
             const randomWeakness = DUMMY_WEAKNESSES[Math.floor(Math.random() * DUMMY_WEAKNESSES.length)];
-            const el = document.getElementById(`dummy-${id}`);
+            let el = document.getElementById(`dummy-${id}`);
+            
+            if (!el) {
+                 const dummiesAreaEl = document.getElementById('dummies-area');
+                 el = document.createElement('div');
+                 el.id = `dummy-${id}`;
+                 el.classList.add('dummy');
+                 dummiesAreaEl.appendChild(el);
+            }
+
             el.classList.remove('dying', 'weakness-FIRE', 'weakness-ICE', 'weakness-LIGHTNING');
-            
-            // As classes de fraqueza no CSS usam o nome do elemento para a cor
             el.classList.add(`weakness-${randomWeakness}`);
-            
-            // Ensures the dummy immediately appears correct if it was previously "dead"
             el.classList.add('opacity-100', 'scale-100'); 
             
-            const spellData = SPELLS[Object.keys(SPELLS).find(key => SPELLS[key].type === randomWeakness)];
-            el.innerHTML = `DUMMY ${id}<br>${spellData ? spellData.display : ''} ${randomWeakness}`;
+            // NOVO: Adiciona o símbolo do feitiço e a tecla de lançamento
+            const spellSymbol = SPELL_SYMBOLS[randomWeakness];
+            // Mapeia o display da tecla para o HUD
+            let controlDisplay;
+            if (id === 1) controlDisplay = 'O';
+            else if (id === 2) controlDisplay = 'P';
+            else if (id === 3) controlDisplay = 'L';
+            else controlDisplay = id;
+
+            el.innerHTML = `<span class="symbol">${spellSymbol}</span><span class="number">${controlDisplay}</span>`; 
 
             return {
                 id: `dummy-${id}`,
@@ -304,14 +411,24 @@
         }
 
         /**
-         * Seleciona um novo dummy para ser o alvo de destaque.
+         * Seleciona um novo dummy para ser o alvo de destaque e inicia o timer.
          */
         function startNewTurn() {
+            if (gameState.isGameOver) return;
+            
             gameState.turn++;
             gameState.isCasting = false;
             gameState.clickSequence = [];
             
-            // Remove highlight from previous dummy
+            // Reset do Timer
+            gameState.turnTimer = TURN_TIME_LIMIT;
+            gameState.isCountingDown = true;
+            timerDisplayEl.textContent = `${TURN_TIME_LIMIT.toFixed(1)}s`;
+            timerDisplayEl.parentElement.classList.remove('bg-green-600/70', 'bg-red-600/70');
+            timerDisplayEl.parentElement.classList.add('bg-yellow-600/70'); 
+
+
+            // Remove highlight do dummy anterior
             if (gameState.highlightedDummyId) {
                 const prevDummy = gameState.dummies.find(d => d.id === gameState.highlightedDummyId);
                 if (prevDummy && prevDummy.el) {
@@ -320,7 +437,7 @@
                 }
             }
 
-            // Select a new random dummy to highlight
+            // Seleciona um novo dummy aleatório para destacar
             const liveDummies = gameState.dummies.filter(d => d.isAlive);
             if (liveDummies.length > 0) {
                 const randomIndex = Math.floor(Math.random() * liveDummies.length);
@@ -331,8 +448,165 @@
                 gameState.highlightedDummyId = newHighlightedDummy.id;
             }
 
+            updateSpellDisplay();
             updateCastingStatus();
         }
+
+        /**
+         * Lida com a colisão, reduzindo a vida do mago.
+         */
+        function handleHit() {
+            if (gameState.isGameOver) return;
+            
+            gameState.health = Math.max(0, gameState.health - 1);
+            flashScreen(ERROR_COLOR, 300); // Flash mais longo para dano
+            drawHealthBar();
+            
+            if (gameState.health <= 0) {
+                gameOver();
+            }
+        }
+
+        /**
+         * Termina o jogo e exibe a tela de Game Over.
+         */
+        function gameOver() {
+            gameState.isGameOver = true;
+            gameState.isCountingDown = false; 
+            castingStatusEl.textContent = "FIM DE JOGO!";
+            
+            // Remove todos os projéteis ativos
+            gameState.projectiles.forEach(p => p.el.remove());
+            gameState.projectiles = [];
+
+            // Mostra o modal
+            finalScoreEl.textContent = `Pontuação Final: ${gameState.score}`;
+            gameOverModalEl.classList.remove('hidden');
+        }
+
+        /**
+         * Cria um novo projétil hostil.
+         * fromDummy é sempre falso, pois projéteis só vêm da direita.
+         */
+        function createProjectile(fromDummy = false) {
+            if (gameState.isGameOver) return;
+            
+            let startX, startY;
+            
+            // Projéteis vêm APENAS da borda direita (conforme pedido)
+            const offset = 50; 
+            startX = window.innerWidth + offset;
+            startY = Math.random() * window.innerHeight;
+            
+
+            const projectileEl = document.createElement('div');
+            projectileEl.classList.add('projectile');
+            projectileEl.textContent = '&';
+            projectileEl.style.left = `${startX - 10}px`; 
+            projectileEl.style.top = `${startY - 10}px`;
+            document.getElementById('game-container').appendChild(projectileEl);
+
+            // Calcula o vetor de direção para o mago
+            const targetX = gameState.wizard.x;
+            const targetY = gameState.wizard.y;
+
+            let dx = targetX - startX;
+            let dy = targetY - startY;
+            let magnitude = Math.sqrt(dx * dx + dy * dy);
+
+            // 80% de variação, 20% de acerto direto
+            if (Math.random() > 0.2) {
+                // Adiciona variação aleatória de até +/- 200 pixels no plano alvo
+                const deviationX = (Math.random() - 0.5) * 400; 
+                const deviationY = (Math.random() - 0.5) * 400;
+                dx += deviationX;
+                dy += deviationY;
+                magnitude = Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            // Normaliza e escala para a velocidade (vetor de velocidade)
+            const vx = (dx / magnitude) * PROJECTILE_SPEED;
+            const vy = (dy / magnitude) * PROJECTILE_SPEED;
+
+            gameState.projectiles.push({
+                el: projectileEl,
+                x: startX,
+                y: startY,
+                vx: vx,
+                vy: vy,
+                radius: 10, // Raio do projétil (metade do tamanho de 20px)
+            });
+        }
+
+        /**
+         * Atualiza a posição de todos os projéteis e verifica colisões.
+         */
+        function updateProjectiles(deltaTime) {
+            const elapsedSeconds = deltaTime / 1000;
+            const wizardRadius = 40; // Metade do tamanho do mago
+
+            for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+                const p = gameState.projectiles[i];
+
+                // FIX: Adiciona verificação de segurança
+                if (!p) continue;
+
+                // 1. Atualiza posição
+                p.x += p.vx * elapsedSeconds;
+                p.y += p.vy * elapsedSeconds;
+                p.el.style.left = `${p.x - p.radius}px`;
+                p.el.style.top = `${p.y - p.radius}px`;
+
+                // 2. Verifica colisão com o mago
+                const distanceSq = Math.pow(p.x - gameState.wizard.x, 2) + Math.pow(p.y - gameState.wizard.y, 2);
+                const minDistanceSq = Math.pow(p.radius + wizardRadius, 2);
+
+                if (distanceSq <= minDistanceSq) {
+                    // Colisão detectada!
+                    handleHit();
+                    
+                    // Remove projétil após o acerto
+                    p.el.remove();
+                    gameState.projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // 3. Limpeza (se o projétil saiu da tela)
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+                const padding = 100;
+                
+                if (p.x < -padding || p.x > screenWidth + padding || 
+                    p.y < -padding || p.y > screenHeight + padding) {
+                    
+                    p.el.remove();
+                    gameState.projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        /**
+         * Lida com a lógica de teleporte de pânico (F).
+         */
+        function handlePanicTeleport() {
+            if (gameState.teleportCooldown > 0) {
+                 flashScreen('#ffc107', 100); // Flash amarelo para indicar cooldown
+                 return;
+            }
+
+            const wizardHalfSize = 40;
+            const targetX = gameState.wizard.x - PANIC_TELEPORT_DISTANCE;
+            
+            // Move 300px para a esquerda, respeitando o limite da tela
+            gameState.wizard.x = Math.max(wizardHalfSize, targetX);
+            
+            wizardEl.style.left = `${gameState.wizard.x}px`;
+            
+            // Inicia o cooldown
+            gameState.teleportCooldown = TELEPORT_COOLDOWN;
+            flashScreen('#4ECDC4', 200); // Flash de teleporte
+        }
+
 
         /**
          * Atualiza o visual dos feitiços selecionados acima da cabeça do Mago.
@@ -348,12 +622,12 @@
                 if (spells[i]) {
                     const spellData = SPELLS[spells[i]];
                     slotEl.textContent = spellData.display;
-                    // CORRIGIDO: Usa o valor hexadecimal direto do objeto SPELLS
                     slotEl.style.backgroundColor = spellData.color;
                     slotEl.style.borderColor = 'white';
                 }
             }
             
+            // isCasting só é true após a seleção completa
             gameState.isCasting = spells.length === 3;
             updateCastingStatus();
         }
@@ -363,7 +637,8 @@
          */
         function updateCastingStatus() {
             if (gameState.isCasting) {
-                castingStatusEl.textContent = "PRONTO PARA LANÇAR! Clique no alvo destacado.";
+                // Atualiza a instrução com as novas teclas de ataque
+                castingStatusEl.textContent = "PRONTO PARA LANÇAR! Acerte O / P / L na ordem.";
                 castingStatusEl.classList.remove('text-red-400');
                 castingStatusEl.classList.add('text-green-400');
             } else {
@@ -372,176 +647,41 @@
                 castingStatusEl.classList.add('text-red-400');
             }
         }
-
-        /**
-         * Lida com a lógica de teleporte (F + Mouse).
-         */
-        function handleTeleport() {
-            const wizardHalfSize = 40;
-            const maxX = window.innerWidth - wizardHalfSize; 
-            const maxY = window.innerHeight - wizardHalfSize;
-
-            const dx = window.mouseX - gameState.wizard.x;
-            const dy = window.mouseY - gameState.wizard.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 0) {
-                // Determine the distance to travel (max 200px)
-                const teleportDist = Math.min(distance, TELEPORT_DISTANCE);
-                
-                const dirX = dx / distance;
-                const dirY = dy / distance;
-
-                // Calculate target position
-                let targetX = gameState.wizard.x + dirX * teleportDist;
-                let targetY = gameState.wizard.y + dirY * teleportDist;
-
-                // Apply boundary check
-                targetX = Math.max(wizardHalfSize, Math.min(targetX, maxX));
-                targetY = Math.max(wizardHalfSize, Math.min(targetY, maxY));
-
-                // Teleport
-                gameState.wizard.x = targetX;
-                gameState.wizard.y = targetY;
-                
-                // Instant update
-                wizardEl.style.left = `${gameState.wizard.x}px`;
-                wizardEl.style.top = `${gameState.wizard.y}px`;
-            }
-
-            // Remove F from keysPressed to make it a single-trigger event
-            delete gameState.keysPressed['F'];
-        }
         
         /**
-         * --- INPUT HANDLERS ---
-         */
-
-        // Listener para teclas (QWE, R, F)
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toUpperCase();
-            
-            // Prevent default browser shortcuts for game keys (Spells, Utility)
-            if (['Q', 'W', 'E', 'R', 'F'].includes(key)) {
-                e.preventDefault(); 
-            }
-            
-            // F: Teleport
-            if (key === 'F' && !gameState.keysPressed['F']) {
-                if (window.mouseX !== undefined && window.mouseY !== undefined) {
-                    handleTeleport();
-                }
-            }
-
-            gameState.keysPressed[key] = true;
-
-            // Q, W, E: Select Spells
-            if (SPELLS[key] && gameState.wizard.selectedSpells.length < 3) {
-                gameState.wizard.selectedSpells.push(key);
-                updateSpellDisplay();
-            } 
-            // R: Remove last spell
-            else if (key === 'R') {
-                if (gameState.wizard.selectedSpells.length > 0) {
-                    gameState.wizard.selectedSpells.pop();
-                    updateSpellDisplay();
-                }
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            delete gameState.keysPressed[e.key.toUpperCase()];
-        });
-
-
-        // Listener para cliques nos Dummies (Casting)
-        document.getElementById('dummies-area').addEventListener('click', (e) => {
-            const targetEl = e.target.closest('.dummy');
-            if (!targetEl) return;
-
-            const dummyId = targetEl.id;
-            const dummy = gameState.dummies.find(d => d.id === dummyId);
-
-            if (!gameState.isCasting) {
-                showMessage("Você deve selecionar 3 feitiços (Q, W, E) antes de lançar!");
-                return;
-            }
-
-            if (!dummy || !dummy.isAlive) return;
-
-            const clickIndex = gameState.clickSequence.length;
-
-            // 1st click: MUST be the highlighted dummy
-            if (clickIndex === 0) {
-                if (!dummy.isHighlighted) {
-                    showMessage("Você DEVE clicar primeiro no alvo DESTACADO!");
-                    return;
-                }
-            }
-
-            // A dummy can only be targeted once per sequence
-            if (gameState.clickSequence.includes(dummyId)) {
-                showMessage("Você já lançou um feitiço neste alvo nesta sequência!");
-                return;
-            }
-
-            // Lançar o feitiço
-            if (clickIndex < 3) {
-                gameState.clickSequence.push(dummyId);
-                const spellKey = gameState.wizard.selectedSpells[clickIndex];
-                
-                castSpell(spellKey, dummy);
-            }
-
-            // Check if all 3 spells have been cast
-            if (gameState.clickSequence.length === 3) {
-                // End of casting phase - visual spells are cleared after all hits are processed
-                gameState.isCasting = false;
-            }
-        });
-
-
-        /**
-         * Lança um feitiço visualmente e verifica o acerto.
+         * Lançamento visual do feitiço.
          */
         function castSpell(spellKey, targetDummy) {
             const spellData = SPELLS[spellKey];
             const targetPos = targetDummy.el.getBoundingClientRect();
             const wizardPos = wizardEl.getBoundingClientRect();
 
-            // 1. Create and position the projectile element
             const projectile = document.createElement('div');
             projectile.classList.add('spell-cast');
-            // CORRIGIDO: Usa o valor hexadecimal direto do objeto SPELLS
             projectile.style.backgroundColor = spellData.color;
             projectile.style.left = `${wizardPos.left + wizardPos.width / 2}px`;
             projectile.style.top = `${wizardPos.top + wizardPos.height / 2}px`;
             document.getElementById('game-container').appendChild(projectile);
 
-            // 2. Calculate animation distance (in pixels)
-            // Target is the center of the dummy
             const dx = (targetPos.left + targetPos.width / 2) - (wizardPos.left + wizardPos.width / 2);
             const dy = (targetPos.top + targetPos.height / 2) - (wizardPos.top + wizardPos.height / 2);
 
-            // 3. Apply animation variables
             projectile.style.setProperty('--dx', `${dx}px`);
             projectile.style.setProperty('--dy', `${dy}px`);
 
-            // 4. Check for hit after animation ends (or slightly before)
             const isLastCast = gameState.clickSequence.length === 3;
 
             setTimeout(() => {
-                projectile.remove(); // Remove projectile after animation
-                checkHit(spellData.type, targetDummy, isLastCast);
+                projectile.remove();
+                checkHit(spellData.type, spellData.color, targetDummy, isLastCast);
             }, 500); // Matches animation duration
         }
 
         /**
-         * Verifica se o feitiço lançado é o correto para matar o dummy.
+         * Verifica se o feitiço lançado é o correto.
          */
-        function checkHit(spellType, dummy, isLastCast) {
+        function checkHit(spellType, spellColor, dummy, isLastCast) {
             if (!dummy.isAlive) {
-                // If the dummy was killed by an earlier spell in this sequence, skip hit check
                 if (isLastCast) {
                     gameState.wizard.selectedSpells = [];
                     updateSpellDisplay();
@@ -551,72 +691,303 @@
             }
             
             if (spellType === dummy.weakness) {
-                // Correct hit!
+                // Acerto: Score +10, Flash Cor do Feitiço
                 gameState.score += 10;
+                flashScreen(spellColor); 
                 scoreDisplayEl.textContent = `Pontuação: ${gameState.score}`;
 
-                // Death animation and Respawn logic
                 dummy.isAlive = false;
                 dummy.el.classList.add('dying');
-                dummy.el.classList.remove('highlighted'); // Remove highlight immediately
+                dummy.el.classList.remove('highlighted'); 
                 
-                // Respawn after 1 second
+                // Respawn após 1 segundo
                 setTimeout(() => {
-                    // Find the index of the dummy being replaced
                     const index = gameState.dummies.findIndex(d => d.id === dummy.id);
                     if (index !== -1) {
-                         // Create a NEW dummy object with new weakness/classes
                          gameState.dummies[index] = createDummy(parseInt(dummy.id.split('-')[1]));
                     }
                     
-                    // Check if this was the last spell in the sequence (3rd click)
                     if (isLastCast) {
-                       gameState.wizard.selectedSpells = []; // Clear visual spells
+                       gameState.wizard.selectedSpells = [];
                        updateSpellDisplay();
-                       startNewTurn();
+                       startNewTurn(); // Inicia novo turno/timer
                     }
                 }, 1000); 
 
             } else {
-                // Incorrect hit 
-                showMessage(`Feitiço ${spellType} não é a fraqueza de ${dummy.id} (${dummy.weakness})!`);
-                // Penalty 
-                gameState.score = Math.max(0, gameState.score - 5);
+                // Erro: Score -10, Flash Vermelho
+                flashScreen(ERROR_COLOR);
+                gameState.score = Math.max(0, gameState.score - 10);
                 scoreDisplayEl.textContent = `Pontuação: ${gameState.score}`;
                 
-                // If it was the last spell, clear the turn
                  if (isLastCast) {
-                    gameState.wizard.selectedSpells = []; // Clear visual spells
+                    gameState.wizard.selectedSpells = [];
                     updateSpellDisplay();
-                    startNewTurn();
+                    startNewTurn(); // Inicia novo turno/timer
                  }
             }
         }
 
 
         /**
-         * Loop principal do jogo (similar a um tick system de 60 FPS)
-         * O movimento WASD foi removido; apenas o Teleporte ('F') é usado.
+         * Loop principal do jogo (60 FPS)
          */
         function gameLoop(timestamp) {
+            if (gameState.isGameOver) {
+                return; // Para o loop
+            }
+            
             const deltaTime = timestamp - gameState.lastTime;
+            const elapsedSeconds = deltaTime / 1000;
             gameState.lastTime = timestamp;
+            
+            // --- 1. Atualiza Posição do Mago por Velocidade (Teclas de Movimento) ---
+            const wizardHalfSize = 40;
+            const maxX = window.innerWidth - wizardHalfSize; 
+            const maxY = window.innerHeight - wizardHalfSize;
 
-            // Movimentação WASD e cálculo de velocidade (vx/vy) removidos.
+            // Determina a direção baseada nas teclas pressionadas (usando as chaves ARROW internas)
+            gameState.wizard.vx = 0;
+            gameState.wizard.vy = 0;
+            
+            if (gameState.keysPressed['ARROWLEFT']) {
+                gameState.wizard.vx = -WIZARD_MOVE_SPEED;
+            } else if (gameState.keysPressed['ARROWRIGHT']) {
+                gameState.wizard.vx = WIZARD_MOVE_SPEED;
+            }
+            
+            if (gameState.keysPressed['ARROWUP']) {
+                gameState.wizard.vy = -WIZARD_MOVE_SPEED;
+            } else if (gameState.keysPressed['ARROWDOWN']) {
+                gameState.wizard.vy = WIZARD_MOVE_SPEED;
+            }
+            
+            // Move o mago
+            gameState.wizard.x += gameState.wizard.vx * elapsedSeconds;
+            gameState.wizard.y += gameState.wizard.vy * elapsedSeconds;
 
-            // Request the next frame
+            // Limita a posição à tela
+            gameState.wizard.x = Math.max(wizardHalfSize, Math.min(gameState.wizard.x, maxX));
+            gameState.wizard.y = Math.max(wizardHalfSize, Math.min(gameState.wizard.y, maxY));
+            
+            // Aplica ao DOM
+            wizardEl.style.left = `${gameState.wizard.x}px`;
+            wizardEl.style.top = `${gameState.wizard.y}px`;
+
+
+            // --- 2. Atualiza Cooldown do Teleporte ---
+            if (gameState.teleportCooldown > 0) {
+                 gameState.teleportCooldown -= elapsedSeconds;
+                 if (gameState.teleportCooldown < 0) gameState.teleportCooldown = 0;
+                 teleportCooldownEl.textContent = `Cooldown: ${gameState.teleportCooldown.toFixed(1)}s`;
+            } else {
+                 teleportCooldownEl.textContent = 'Cooldown: Pronto';
+            }
+
+
+            // --- 3. Geração de Projéteis Inimigos ---
+            if (timestamp > gameState.lastProjectileTime + gameState.projectileSpawnInterval) {
+                createProjectile(false); // Gera projéteis APENAS da direita
+                gameState.lastProjectileTime = timestamp;
+            }
+            
+            // --- 4. Atualização do Timer de Turno ---
+            if (gameState.isCountingDown && !gameState.isCasting) {
+                gameState.turnTimer -= elapsedSeconds;
+                
+                if (gameState.turnTimer <= 0) {
+                    gameState.turnTimer = 0;
+                    gameState.isCountingDown = false;
+                    
+                    // TEMPO ESGOTADO: Dummies contra-atacam!
+                    castingStatusEl.textContent = "TEMPO ESGOTADO! Dummies contra-atacam!";
+                    // Gerar projéteis de contra-ataque a partir da direita
+                    for (let i = 0; i < 3; i++) {
+                        createProjectile(false); 
+                    }
+                    
+                    // Reinicia o turno após um pequeno delay
+                    setTimeout(() => {
+                        gameState.wizard.selectedSpells = [];
+                        updateSpellDisplay();
+                        startNewTurn();
+                    }, 1500); 
+                    
+                    timerDisplayEl.textContent = '0.0s';
+                    timerDisplayEl.parentElement.classList.replace('bg-red-600/70', 'bg-yellow-600/70');
+
+                } else {
+                    // Atualiza display e cor do timer
+                    timerDisplayEl.textContent = `${gameState.turnTimer.toFixed(1)}s`;
+                    if (gameState.turnTimer <= 3) { // Aviso de tempo esgotando
+                        timerDisplayEl.parentElement.classList.replace('bg-yellow-600/70', 'bg-red-600/70');
+                    } else {
+                        timerDisplayEl.parentElement.classList.replace('bg-red-600/70', 'bg-yellow-600/70');
+                    }
+                }
+            } else if (gameState.isCasting) {
+                // Timer visual de CASTING
+                timerDisplayEl.textContent = 'CASTING...';
+                timerDisplayEl.parentElement.classList.replace('bg-red-600/70', 'bg-green-600/70');
+                timerDisplayEl.parentElement.classList.replace('bg-yellow-600/70', 'bg-green-600/70');
+                gameState.isCountingDown = false;
+            }
+
+            // --- 5. Atualiza Projéteis Hostis ---
+            updateProjectiles(deltaTime);
+
             requestAnimationFrame(gameLoop);
         }
 
-        // Listener to track mouse position for teleport
-        window.addEventListener('mousemove', (e) => {
-            window.mouseX = e.clientX;
-            window.mouseY = e.clientY;
+        // --- INPUT HANDLERS (AGORA FOCADO EM TECLADO) ---
+        window.addEventListener('keydown', (e) => {
+            if (gameState.isGameOver) return;
+            const key = e.key.toUpperCase(); // Para Q, W, E, R, F, U, H, J, K, O, P, L
+            const keyRaw = e.key;           // Para caracteres especiais
+            const code = e.code;            // Para 'Enter'
+
+            
+            // Previne a rolagem da página por causa das hotkeys
+            if (['Q', 'W', 'E', 'R', 'F', 'U', 'H', 'J', 'K', 'O', 'P', 'L'].includes(key)) {
+                e.preventDefault(); 
+            }
+            
+            // 1. MOVIMENTO (U, H, J, K)
+            // Mapeia U/H/J/K para chaves internas ARROW, que são usadas no gameLoop
+            const movementKeys = { 
+                'U': 'ARROWUP', 
+                'J': 'ARROWDOWN', // 'J' é baixo
+                'H': 'ARROWLEFT', // 'H' é esquerda
+                'K': 'ARROWRIGHT' // 'K' é direita
+            };
+            if (movementKeys[key]) {
+                gameState.keysPressed[movementKeys[key]] = true;
+            }
+
+            // 2. Teclas de Seleção de Feitiço (Q, W, E - Mão Esquerda)
+            if (SPELLS[key] && gameState.wizard.selectedSpells.length < 3) {
+                gameState.wizard.selectedSpells.push(key);
+                updateSpellDisplay();
+            } 
+            // 3. Botão de Pânico (F)
+            else if (key === 'F') {
+                handlePanicTeleport();
+            }
+            // 4. Remover último (R)
+            else if (key === 'R') {
+                if (gameState.wizard.selectedSpells.length > 0) {
+                    gameState.wizard.selectedSpells.pop();
+                    updateSpellDisplay();
+                }
+            } 
+            // 5. LANÇAMENTO/ALVO (O, P, L)
+            else if (gameState.isCasting) {
+                let targetDummyIndex = -1; // 0 for Dummy 1 (ID: 1), 1 for Dummy 2 (ID: 2), 2 for Dummy 3 (ID: 3)
+                
+                // Mapeia as novas teclas de ataque O, P, L
+                if (key === 'O') {
+                    targetDummyIndex = 0; 
+                } else if (key === 'P') {
+                    targetDummyIndex = 1; 
+                } else if (key === 'L') {
+                    targetDummyIndex = 2; 
+                }
+
+                if (targetDummyIndex !== -1) {
+                    const dummy = gameState.dummies[targetDummyIndex];
+
+                    if (!dummy || !dummy.isAlive) return;
+
+                    // O ID do dummy é 1, 2 ou 3. O índice do array é 0, 1 ou 2.
+                    const dummyIdNumber = parseInt(dummy.id.split('-')[1]);
+                    const clickIndex = gameState.clickSequence.length;
+
+                    // Na primeira etapa, só pode acertar o dummy destacado
+                    if (clickIndex === 0 && !dummy.isHighlighted) {
+                        flashScreen(ERROR_COLOR);
+                        return;
+                    }
+
+                    // Não pode acertar o mesmo dummy duas vezes na mesma sequência
+                    if (gameState.clickSequence.includes(dummy.id)) {
+                        flashScreen(ERROR_COLOR);
+                        return;
+                    }
+
+                    if (clickIndex < 3) {
+                        gameState.clickSequence.push(dummy.id);
+                        const spellKey = gameState.wizard.selectedSpells[clickIndex];
+                        
+                        castSpell(spellKey, dummy);
+                    }
+                    
+                    // Verifica se o feitiço lançado foi o último
+                    if (gameState.clickSequence.length === 3) {
+                        // Após a terceira jogada (acerto ou erro), a sequência é encerrada
+                        // O startNewTurn/reset é tratado dentro de checkHit após 500ms
+                        gameState.isCasting = false;
+                    }
+                }
+            }
         });
-        
+
+        // Limpa as teclas de movimento no keyup para que o mago pare de se mover
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toUpperCase();
+            // Mapeia U, H, J, K de volta para a representação interna de tecla ARROW
+            const movementKeys = { 
+                'U': 'ARROWUP', 
+                'J': 'ARROWDOWN', 
+                'H': 'ARROWLEFT', 
+                'K': 'ARROWRIGHT' 
+            };
+            if (movementKeys[key]) {
+                delete gameState.keysPressed[movementKeys[key]];
+            }
+        });
+
+
+        // --- SETUP AND INITIALIZATION ---
+
+        /**
+         * Inicializa o estado do jogo e as posições iniciais (usado no start e restart).
+         */
+        function initializeGame() {
+            gameState.score = 0;
+            gameState.health = INITIAL_HEALTH;
+            gameState.isGameOver = false;
+            gameState.teleportCooldown = 0;
+            gameState.projectiles.forEach(p => p.el.remove());
+            gameState.projectiles = [];
+            gameState.turn = 0;
+            gameState.lastProjectileTime = performance.now(); 
+            
+            // Clear DOM elements and reset display
+            gameOverModalEl.classList.add('hidden');
+            scoreDisplayEl.textContent = `Pontuação: ${gameState.score}`;
+            teleportCooldownEl.textContent = 'Cooldown: Pronto';
+            drawHealthBar();
+
+            // Setup initial dummy positions and weaknesses
+            gameState.dummies = [];
+            document.getElementById('dummies-area').innerHTML = ''; // Limpa a área
+            for (let i = 0; i < 3; i++) {
+                 gameState.dummies.push(createDummy(i + 1));
+            }
+
+            // Set initial wizard position in DOM (centralizado verticalmente, na esquerda)
+            const wizardHalfSize = 40;
+            gameState.wizard.x = wizardHalfSize; 
+            gameState.wizard.y = window.innerHeight / 2; // Começa no meio vertical
+            wizardEl.style.left = `${gameState.wizard.x}px`;
+            wizardEl.style.top = `${gameState.wizard.y}px`;
+
+            startNewTurn();
+        }
+
+
         // Listener to handle window resize and keep the wizard inside boundaries
         window.addEventListener('resize', () => {
-             // Re-evaluate boundaries on resize (simple reposition if out of bounds)
              const wizardHalfSize = 40;
              const maxX = window.innerWidth - wizardHalfSize; 
              const maxY = window.innerHeight - wizardHalfSize;
@@ -626,6 +997,11 @@
              
              wizardEl.style.left = `${gameState.wizard.x}px`;
              wizardEl.style.top = `${gameState.wizard.y}px`;
+        });
+
+        // Add restart button listener
+        restartButtonEl.addEventListener('click', () => {
+            initializeGame();
         });
 
         // Start the game when the window loads
